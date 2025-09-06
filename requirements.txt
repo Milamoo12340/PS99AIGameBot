@@ -363,3 +363,7 @@ crossbar
 
 # Misc
 editdistance
+html5lib
+lxml
+pywebview
+streamlit

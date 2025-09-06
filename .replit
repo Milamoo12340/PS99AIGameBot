@@ -1,0 +1,7 @@
+modules = ["python-3.12", "nodejs-20"]
+[agent]
+expertMode = true
+
+[nix]
+channel = "stable-25_05"
+packages = ["SDL2", "SDL2_image", "SDL2_mixer", "SDL2_ttf", "arrow-cpp", "c-ares", "cacert", "cargo", "chromedriver", "fftw", "firefox", "freefont_ttf", "freetype", "geckodriver", "glibcLocales", "glpk", "grpc", "gsl", "hdf5", "lcms2", "libGL", "libGLU", "libcxx", "libffi", "libiconv", "libimagequant", "libjpeg", "libtiff", "libwebp", "libxcrypt", "libyaml", "llvm", "mtdev", "nodejs", "openblas", "openjpeg", "openssh", "openssl", "pgadmin4", "pkg-config", "postgresql", "rustc", "scrot", "suitesparse", "tcl", "tk", "xcodebuild", "xdg-utils", "xsimd", "xvfb-run", "zlib"]
