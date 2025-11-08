@@ -367,3 +367,12 @@ html5lib
 lxml
 pywebview
 streamlit
+flask
+flask-cors
+numpy
+pillow
+psutil
+requests
+beautifulsoup4
+opencv-python
+pyautogui

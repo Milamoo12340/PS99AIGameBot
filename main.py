@@ -9,96 +9,142 @@ import sys
 import argparse
 import logging
 from pathlib import Path
-from flask import Flask # Assuming you are using Flask
-import numpy.core
 
-# if using flask
-app = Flask(__name__)
-
-@app.route('/')
-def home():
-    return "Welcome to the AI Game Bot!"
-
-if __name__ == "__main__":
-    # Ensure it binds to all available IPs by using '0.0.0.0'
-    app.run(host='0.0.0.0', port=5000)
-
-# Add core modules to path
+# Add core modules to path FIRST
 sys.path.append(os.path.join(os.path.dirname(__file__), 'core'))
 sys.path.append(os.path.join(os.path.dirname(__file__), 'utils'))
 
 from utils.logger import setup_logger
 from utils.config import Config
-from core.vision_system import VisionSystem
-from core.automation_engine import AutomationEngine
-from core.learning_system import LearningSystem
-from core.knowledge_manager import KnowledgeManager
-from core.macro_system import MacroSystem
-from core.command_processor import CommandProcessor
-from core.autonomous_learning_system import AutonomousLearningSystem
-from core.interactive_trainer import InteractiveTrainer
 
 class GameBot:
     """Main game automation bot class"""
     
-    def __init__(self):
+    def __init__(self, minimal_mode=False):
         self.logger = setup_logger('GameBot')
         self.config = Config()
+        self.minimal_mode = minimal_mode
         
-        # Initialize core systems
-        self.vision_system = VisionSystem()
-        self.automation_engine = AutomationEngine()
-        self.learning_system = LearningSystem()
-        self.knowledge_manager = KnowledgeManager()
-        self.macro_system = MacroSystem()
-        
-        # Initialize interactive trainer
-        self.interactive_trainer = InteractiveTrainer(
-            enhanced_vision=self.vision_system,
-            automation_engine=self.automation_engine
-        )
-        
-        # Initialize autonomous learning system
-        self.autonomous_learning = AutonomousLearningSystem()
-        self.autonomous_learning.start_autonomous_learning()
-        
-        # Initialize SerpentAI enhanced systems
+        # Initialize core systems with error handling
+        self.vision_system = None
+        self.automation_engine = None
+        self.learning_system = None
+        self.knowledge_manager = None
+        self.macro_system = None
+        self.command_processor = None
+        self.interactive_trainer = None
+        self.autonomous_learning = None
         self.serpent_vision = None
         self.serpent_rl = None
+        self.multi_instance_launcher = None
         
+        if not minimal_mode:
+            self._initialize_full_systems()
+        else:
+            self.logger.info("🌐 GameBot running in minimal web-only mode")
+    
+    def _initialize_full_systems(self):
+        """Initialize all systems with proper error handling"""
+        try:
+            from core.vision_system import VisionSystem
+            self.vision_system = VisionSystem()
+            self.logger.info("✓ Vision system initialized")
+        except Exception as e:
+            self.logger.warning(f"Vision system not available: {e}")
+        
+        try:
+            from core.automation_engine import AutomationEngine
+            self.automation_engine = AutomationEngine()
+            self.logger.info("✓ Automation engine initialized")
+        except Exception as e:
+            self.logger.warning(f"Automation engine not available: {e}")
+        
+        try:
+            from core.learning_system import LearningSystem
+            self.learning_system = LearningSystem()
+            self.logger.info("✓ Learning system initialized")
+        except Exception as e:
+            self.logger.warning(f"Learning system not available: {e}")
+        
+        try:
+            from core.knowledge_manager import KnowledgeManager
+            self.knowledge_manager = KnowledgeManager()
+            self.logger.info("✓ Knowledge manager initialized")
+        except Exception as e:
+            self.logger.warning(f"Knowledge manager not available: {e}")
+        
+        try:
+            from core.macro_system import MacroSystem
+            self.macro_system = MacroSystem()
+            self.logger.info("✓ Macro system initialized")
+        except Exception as e:
+            self.logger.warning(f"Macro system not available: {e}")
+        
+        # Initialize interactive trainer
+        try:
+            from core.interactive_trainer import InteractiveTrainer
+            if self.vision_system and self.automation_engine:
+                self.interactive_trainer = InteractiveTrainer(
+                    enhanced_vision=self.vision_system,
+                    automation_engine=self.automation_engine
+                )
+                self.logger.info("✓ Interactive trainer initialized")
+        except Exception as e:
+            self.logger.warning(f"Interactive trainer not available: {e}")
+        
+        # Initialize autonomous learning system
+        try:
+            from core.autonomous_learning_system import AutonomousLearningSystem
+            self.autonomous_learning = AutonomousLearningSystem()
+            self.autonomous_learning.start_autonomous_learning()
+            self.logger.info("✓ Autonomous learning initialized")
+        except Exception as e:
+            self.logger.warning(f"Autonomous learning not available: {e}")
+        
+        # Initialize SerpentAI enhanced systems
         try:
             from core.serpent_enhanced_vision import SerpentEnhancedVision
             self.serpent_vision = SerpentEnhancedVision()
             self.serpent_vision.start_continuous_analysis()
-            self.logger.info("🐍 SerpentAI Enhanced Vision System activated")
+            self.logger.info("✓ SerpentAI Enhanced Vision activated")
         except Exception as e:
             self.logger.warning(f"SerpentAI Vision not available: {e}")
         
         try:
             from core.serpent_reinforcement_learning import SerpentReinforcementLearning
-            self.serpent_rl = SerpentReinforcementLearning(
-                enhanced_vision=self.serpent_vision,
-                automation_engine=self.automation_engine
-            )
-            self.logger.info("🐍 SerpentAI Reinforcement Learning System activated")
+            if self.serpent_vision and self.automation_engine:
+                self.serpent_rl = SerpentReinforcementLearning(
+                    enhanced_vision=self.serpent_vision,
+                    automation_engine=self.automation_engine
+                )
+                self.logger.info("✓ SerpentAI RL activated")
         except Exception as e:
             self.logger.warning(f"SerpentAI RL not available: {e}")
         
-        self.command_processor = CommandProcessor(
-            vision=self.vision_system,
-            automation=self.automation_engine,
-            learning=self.learning_system,
-            knowledge=self.knowledge_manager,
-            macro=self.macro_system
-        )
+        # Initialize command processor
+        try:
+            from core.command_processor import CommandProcessor
+            self.command_processor = CommandProcessor(
+                vision=self.vision_system,
+                automation=self.automation_engine,
+                learning=self.learning_system,
+                knowledge=self.knowledge_manager,
+                macro=self.macro_system
+            )
+            self.logger.info("✓ Command processor initialized")
+        except Exception as e:
+            self.logger.warning(f"Command processor not available: {e}")
         
         # Initialize Multi-Instance Launcher for PS99 coordination
-        from pathlib import Path
-        from multi_instance_launcher import MultiInstanceLauncher
-        app_package_path = Path("./attached_assets")  # Path to app package
-        self.multi_instance_launcher = MultiInstanceLauncher(app_package_path)
+        try:
+            from multi_instance_launcher import MultiInstanceLauncher
+            app_package_path = Path("./attached_assets")
+            self.multi_instance_launcher = MultiInstanceLauncher(app_package_path)
+            self.logger.info("✓ Multi-instance launcher initialized")
+        except Exception as e:
+            self.logger.warning(f"Multi-instance launcher not available: {e}")
         
-        self.logger.info("🤖 GameBot initialized with autonomous self-learning capabilities")
+        self.logger.info("🤖 GameBot fully initialized")
     
     def start_interactive_mode(self):
         """Start interactive command-line interface"""
@@ -133,7 +179,10 @@ class GameBot:
     def process_single_command(self, command):
         """Process a single command (useful for web interface)"""
         try:
-            return self.command_processor.process_command(command)
+            if self.command_processor:
+                return self.command_processor.process_command(command)
+            else:
+                return "Command processor not available in minimal mode"
         except Exception as e:
             self.logger.error(f"Error processing command '{command}': {e}")
             return f"Error: {e}"
@@ -166,14 +215,6 @@ Available Commands:
     quit/exit/q            - Exit the program
         """
         print(help_text)
-    
-    def process_single_command(self, command):
-        """Process a single command (useful for web interface)"""
-        try:
-            return self.command_processor.process_command(command)
-        except Exception as e:
-            self.logger.error(f"Error processing command '{command}': {e}")
-            return f"Error: {e}"
     
     # Item Mapping and AI Learning Methods
     def start_autoplay_mode(self):
@@ -496,8 +537,9 @@ def main():
     if args.debug:
         logging.getLogger().setLevel(logging.DEBUG)
     
-    # Create bot instance
-    bot = GameBot()
+    # Create bot instance with minimal mode for web interface
+    minimal_mode = args.web  # Use minimal mode for web to avoid heavy dependencies
+    bot = GameBot(minimal_mode=minimal_mode)
     
     if args.command:
         # Execute single command

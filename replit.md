@@ -10,6 +10,44 @@ The system integrates multiple AI techniques including supervised/unsupervised l
 
 Preferred communication style: Simple, everyday language.
 
+## Replit Environment Setup (November 2025)
+
+### Running Modes
+- **Web Dashboard** (Default): `python main.py --web --port 5000` - Minimal mode for web interface only
+- **Full Mode**: `python main.py` - Desktop app with full CV/ML capabilities (requires additional dependencies)
+- **Desktop App**: `python main.py --desktop` - Native Tkinter GUI
+
+### Minimal Mode Architecture
+The system supports a minimal web-only mode that runs the Flask dashboard without heavy computer vision and machine learning dependencies. This allows the web interface to run efficiently in cloud environments.
+
+**Minimal Mode Features:**
+- Flask web dashboard accessible on port 5000
+- All UI routes functional (dashboard, item mapper, task recorder, egg hatcher, multi-instance launcher)
+- API endpoints gracefully handle missing subsystems with clear messages
+- GameBot initializes with `minimal_mode=True` when `--web` flag is used
+- Lightweight operation with only core dependencies (Flask, numpy, requests)
+
+**Full Mode Features:**
+- All minimal mode features plus:
+- Computer vision system (OpenCV)
+- Game automation engine (PyAutoGUI)
+- Machine learning systems (TensorFlow, PyTorch)
+- Advanced reinforcement learning agents
+
+### Deployment Configuration
+- **Type**: Autoscale (stateless web application)
+- **Command**: `python main.py --web --port 5000`
+- **Port**: 5000 (web preview)
+- **Host**: 0.0.0.0 (allows all connections)
+
+### Recent Changes (November 8, 2025)
+1. Fixed corrupted Python bytecode from Windows build
+2. Removed conflicting directories from root (numpy, PIL, etc.)
+3. Created complete Flask application with all dashboard routes
+4. Implemented minimal mode pattern for efficient cloud deployment
+5. Added graceful error handling for missing subsystems
+6. Configured production deployment settings
+
 ## System Architecture
 
 ### Frontend Architecture

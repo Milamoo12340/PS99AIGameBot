@@ -1,0 +1,6 @@
+2025-11-08 15:35:04,052 - GameBot - INFO - logger.py:74 - Logger 'GameBot' initialized
+2025-11-08 15:35:04,053 - GameBot - INFO - main.py:44 - 🌐 GameBot running in minimal web-only mode
+2025-11-08 15:35:05,973 - GameBot - INFO - main.py:561 - 🚀 Starting AI Game Bot web server on 0.0.0.0:5000
+2025-11-08 15:37:11,652 - GameBot - INFO - logger.py:74 - Logger 'GameBot' initialized
+2025-11-08 15:37:11,652 - GameBot - INFO - main.py:44 - 🌐 GameBot running in minimal web-only mode
+2025-11-08 15:37:11,829 - GameBot - INFO - main.py:561 - 🚀 Starting AI Game Bot web server on 0.0.0.0:5000
