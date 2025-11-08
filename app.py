@@ -2,17 +2,19 @@
 Flask Web Application for AI Game Bot Dashboard
 Provides web interface for game automation, vision system, and learning capabilities
 """
-from flask import Flask, render_template, request, jsonify, send_from_directory
+from flask import Flask, render_template, request, jsonify, send_from_directory, Response
 from flask_cors import CORS
 import logging
 import os
 import json
 from pathlib import Path
+import time
 
 def create_app(bot_instance=None):
     """Create and configure Flask application"""
     app = Flask(__name__)
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
+    app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
     
     CORS(app)
     
@@ -20,6 +22,10 @@ def create_app(bot_instance=None):
     
     global bot
     bot = bot_instance
+    
+    notification_bridge = None
+    if bot and hasattr(bot, 'notification_bridge'):
+        notification_bridge = bot.notification_bridge
     
     @app.route('/')
     def index():
