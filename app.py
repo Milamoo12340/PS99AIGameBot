@@ -245,6 +245,168 @@ def create_app(bot_instance=None):
             logger.error(f"Error getting sync status: {e}")
             return jsonify({'success': False, 'error': str(e)})
     
+    @app.route('/api/learning/stats')
+    def learning_stats():
+        """Get comprehensive learning statistics"""
+        try:
+            stats = {}
+            
+            if bot:
+                if hasattr(bot, 'learning_system') and bot.learning_system:
+                    stats['learning_system'] = bot.learning_system.stats
+                
+                if hasattr(bot, 'hf_rl') and bot.hf_rl:
+                    stats['huggingface_rl'] = bot.hf_rl.get_training_stats()
+                
+                if hasattr(bot, 'video_learner') and bot.video_learner:
+                    stats['video_learning'] = bot.video_learner.get_stats()
+                
+                if hasattr(bot, 'code_learner') and bot.code_learner:
+                    stats['code_generation'] = bot.code_learner.get_stats()
+                
+                if hasattr(bot, 'notification_manager') and bot.notification_manager:
+                    stats['notifications'] = bot.notification_manager.get_stats()
+            
+            return jsonify({'success': True, 'stats': stats})
+            
+        except Exception as e:
+            logger.error(f"Error getting learning stats: {e}")
+            return jsonify({'success': False, 'error': str(e)})
+    
+    @app.route('/api/notifications/recent')
+    def recent_notifications():
+        """Get recent learning notifications"""
+        try:
+            limit = request.args.get('limit', 20, type=int)
+            notifications = []
+            
+            if bot and hasattr(bot, 'notification_manager') and bot.notification_manager:
+                notifications = bot.notification_manager.get_recent_notifications(limit)
+            
+            return jsonify({'success': True, 'notifications': notifications})
+            
+        except Exception as e:
+            logger.error(f"Error getting notifications: {e}")
+            return jsonify({'success': False, 'error': str(e)})
+    
+    @app.route('/api/notifications/stream')
+    def notification_stream():
+        """Server-Sent Events stream for real-time notifications"""
+        def generate():
+            while True:
+                try:
+                    if notification_bridge:
+                        pending = notification_bridge.get_pending_notifications()
+                        for notif in pending:
+                            yield f"data: {json.dumps(notif)}\n\n"
+                    time.sleep(0.5)
+                except Exception as e:
+                    logger.error(f"Stream error: {e}")
+                    yield f"data: {json.dumps({'error': str(e)})}\n\n"
+        
+        return Response(generate(), mimetype='text/event-stream')
+    
+    @app.route('/api/video/learn-youtube', methods=['POST'])
+    def learn_from_youtube():
+        """Learn from a YouTube video"""
+        try:
+            data = request.get_json()
+            video_url = data.get('url')
+            focus_areas = data.get('focus_areas', [])
+            
+            if not video_url:
+                return jsonify({'success': False, 'error': 'No URL provided'})
+            
+            if bot and hasattr(bot, 'video_learner') and bot.video_learner:
+                result = bot.video_learner.learn_from_youtube(video_url, focus_areas)
+                return jsonify(result)
+            
+            return jsonify({'success': False, 'error': 'Video learner not available'})
+            
+        except Exception as e:
+            logger.error(f"Error learning from YouTube: {e}")
+            return jsonify({'success': False, 'error': str(e)})
+    
+    @app.route('/api/video/upload', methods=['POST'])
+    def upload_video():
+        """Upload and learn from a video file"""
+        try:
+            if 'video' not in request.files:
+                return jsonify({'success': False, 'error': 'No video file provided'})
+            
+            video_file = request.files['video']
+            if video_file.filename == '':
+                return jsonify({'success': False, 'error': 'No file selected'})
+            
+            temp_path = Path('data/uploads') / video_file.filename
+            temp_path.parent.mkdir(parents=True, exist_ok=True)
+            video_file.save(temp_path)
+            
+            if bot and hasattr(bot, 'video_learner') and bot.video_learner:
+                result = bot.video_learner.learn_from_uploaded_file(str(temp_path))
+                return jsonify(result)
+            
+            return jsonify({'success': False, 'error': 'Video learner not available'})
+            
+        except Exception as e:
+            logger.error(f"Error uploading video: {e}")
+            return jsonify({'success': False, 'error': str(e)})
+    
+    @app.route('/api/code/learn', methods=['POST'])
+    def learn_from_code():
+        """Learn from code examples"""
+        try:
+            data = request.get_json()
+            code = data.get('code')
+            language = data.get('language', 'python')
+            
+            if not code:
+                return jsonify({'success': False, 'error': 'No code provided'})
+            
+            temp_file = Path('data/code_examples') / f'example_{int(time.time())}.{language}'
+            temp_file.parent.mkdir(parents=True, exist_ok=True)
+            
+            with open(temp_file, 'w') as f:
+                f.write(code)
+            
+            if bot and hasattr(bot, 'code_learner') and bot.code_learner:
+                result = bot.code_learner.learn_from_code_file(str(temp_file), language)
+                return jsonify(result)
+            
+            return jsonify({'success': False, 'error': 'Code learner not available'})
+            
+        except Exception as e:
+            logger.error(f"Error learning from code: {e}")
+            return jsonify({'success': False, 'error': str(e)})
+    
+    @app.route('/api/code/generate', methods=['POST'])
+    def generate_code():
+        """Generate code from learned patterns"""
+        try:
+            data = request.get_json()
+            code_type = data.get('type')
+            parameters = data.get('parameters', {})
+            
+            if not code_type:
+                return jsonify({'success': False, 'error': 'No code type specified'})
+            
+            if bot and hasattr(bot, 'code_learner') and bot.code_learner:
+                code = bot.code_learner.generate_code(code_type, parameters)
+                if code:
+                    return jsonify({'success': True, 'code': code})
+                return jsonify({'success': False, 'error': 'No template available for this type'})
+            
+            return jsonify({'success': False, 'error': 'Code learner not available'})
+            
+        except Exception as e:
+            logger.error(f"Error generating code: {e}")
+            return jsonify({'success': False, 'error': str(e)})
+    
+    @app.route('/learning-dashboard')
+    def learning_dashboard():
+        """Learning dashboard page"""
+        return render_template('learning_dashboard.html')
+    
     @app.route('/health')
     def health():
         """Health check endpoint"""

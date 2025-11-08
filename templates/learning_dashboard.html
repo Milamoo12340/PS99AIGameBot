@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Learning Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .notification-toast {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 1050;
+            max-width: 400px;
+        }
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .learning-indicator {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .notification-item {
+            transition: all 0.3s ease;
+            border-left: 4px solid #667eea;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        .notification-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-primary">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1">
+                <i class="fas fa-brain me-2"></i>AI Learning Dashboard
+            </span>
+            <div class="d-flex align-items-center">
+                <span class="badge bg-success me-2 learning-indicator" id="learningStatus">
+                    <i class="fas fa-circle me-1"></i>Learning Active
+                </span>
+                <a href="/" class="btn btn-outline-light btn-sm">
+                    <i class="fas fa-arrow-left me-1"></i>Back
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-3">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5><i class="fas fa-chart-line me-2"></i>Learning Statistics</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="stats-card text-center">
+                                    <h3 id="itemsLearned">0</h3>
+                                    <small>Items Learned</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stats-card text-center">
+                                    <h3 id="patternsDiscovered">0</h3>
+                                    <small>Patterns Discovered</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stats-card text-center">
+                                    <h3 id="framesAnalyzed">0</h3>
+                                    <small>Frames Analyzed</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stats-card text-center">
+                                    <h3 id="modelsTraining">0</h3>
+                                    <small>RL Models</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5><i class="fas fa-video me-2"></i>Learn from Video</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">YouTube URL</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="youtubeUrl" placeholder="https://youtube.com/watch?v=...">
+                                <button class="btn btn-primary" onclick="learnFromYouTube()">
+                                    <i class="fas fa-play me-1"></i>Learn
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Upload Video File</label>
+                            <input type="file" class="form-control" id="videoFile" accept="video/*">
+                            <button class="btn btn-success mt-2" onclick="uploadVideo()">
+                                <i class="fas fa-upload me-1"></i>Upload & Learn
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-code me-2"></i>Learn from Code</h5>
+                    </div>
+                    <div class="card-body">
+                        <textarea class="form-control mb-2" id="codeInput" rows="6" placeholder="Paste code here..."></textarea>
+                        <select class="form-select mb-2" id="codeLanguage">
+                            <option value="python">Python</option>
+                            <option value="javascript">JavaScript</option>
+                            <option value="java">Java</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="learnFromCode()">
+                            <i class="fas fa-robot me-1"></i>Analyze Code
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-bell me-2"></i>Live Learning Events</h5>
+                    </div>
+                    <div class="card-body" style="height: 600px; overflow-y: auto;" id="notificationsList">
+                        <p class="text-muted text-center">Waiting for learning events...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container position-fixed top-0 end-0 p-3" id="toastContainer"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let eventSource = null;
+
+        function connectToNotifications() {
+            if (eventSource) {
+                eventSource.close();
+            }
+
+            eventSource = new EventSource('/api/notifications/stream');
+            
+            eventSource.onmessage = function(event) {
+                try {
+                    const notification = JSON.parse(event.data);
+                    handleNotification(notification);
+                } catch (e) {
+                    console.error('Error parsing notification:', e);
+                }
+            };
+
+            eventSource.onerror = function(error) {
+                console.error('EventSource error:', error);
+                setTimeout(connectToNotifications, 5000);
+            };
+        }
+
+        function handleNotification(notification) {
+            addNotificationToList(notification);
+            showToast(notification);
+        }
+
+        function addNotificationToList(notification) {
+            const list = document.getElementById('notificationsList');
+            
+            if (list.querySelector('.text-muted')) {
+                list.innerHTML = '';
+            }
+
+            const item = document.createElement('div');
+            item.className = 'notification-item';
+            item.innerHTML = `
+                <div class="d-flex justify-content-between">
+                    <strong>${notification.title || notification.type}</strong>
+                    <small class="text-muted">${new Date(notification.timestamp * 1000).toLocaleTimeString()}</small>
+                </div>
+                <div>${notification.message}</div>
+            `;
+
+            list.insertBefore(item, list.firstChild);
+
+            if (list.children.length > 50) {
+                list.removeChild(list.lastChild);
+            }
+        }
+
+        function showToast(notification) {
+            const toastContainer = document.getElementById('toastContainer');
+            
+            const toastDiv = document.createElement('div');
+            toastDiv.className = 'toast';
+            toastDiv.setAttribute('role', 'alert');
+            
+            const priority = notification.priority || 'medium';
+            const bgColor = priority === 'high' ? 'bg-success' : priority === 'medium' ? 'bg-info' : 'bg-secondary';
+            
+            toastDiv.innerHTML = `
+                <div class="toast-header ${bgColor} text-white">
+                    <strong class="me-auto">${notification.title || 'Learning Update'}</strong>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+                </div>
+                <div class="toast-body">${notification.message}</div>
+            `;
+            
+            toastContainer.appendChild(toastDiv);
+            
+            const toast = new bootstrap.Toast(toastDiv, {delay: 5000});
+            toast.show();
+            
+            toastDiv.addEventListener('hidden.bs.toast', function() {
+                toastContainer.removeChild(toastDiv);
+            });
+        }
+
+        function updateStats() {
+            fetch('/api/learning/stats')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.stats) {
+                        if (data.stats.learning_system) {
+                            document.getElementById('itemsLearned').textContent = 
+                                data.stats.learning_system.items_learned || 0;
+                            document.getElementById('patternsDiscovered').textContent = 
+                                data.stats.learning_system.patterns_learned || 0;
+                        }
+                        
+                        if (data.stats.video_learning) {
+                            document.getElementById('framesAnalyzed').textContent = 
+                                data.stats.video_learning.frames_analyzed || 0;
+                        }
+                        
+                        if (data.stats.huggingface_rl) {
+                            document.getElementById('modelsTraining').textContent = 
+                                data.stats.huggingface_rl.models_loaded || 0;
+                        }
+                    }
+                })
+                .catch(error => console.error('Error updating stats:', error));
+        }
+
+        function learnFromYouTube() {
+            const url = document.getElementById('youtubeUrl').value;
+            if (!url) {
+                alert('Please enter a YouTube URL');
+                return;
+            }
+
+            fetch('/api/video/learn-youtube', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({url: url, focus_areas: ['chest', 'egg', 'button']})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`Learning complete! Analyzed ${data.frames_analyzed} frames`);
+                } else {
+                    alert('Error: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => alert('Error: ' + error));
+        }
+
+        function uploadVideo() {
+            const fileInput = document.getElementById('videoFile');
+            if (!fileInput.files.length) {
+                alert('Please select a video file');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('video', fileInput.files[0]);
+
+            fetch('/api/video/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`Learning complete! Analyzed ${data.frames_analyzed} frames`);
+                } else {
+                    alert('Error: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => alert('Error: ' + error));
+        }
+
+        function learnFromCode() {
+            const code = document.getElementById('codeInput').value;
+            const language = document.getElementById('codeLanguage').value;
+
+            if (!code) {
+                alert('Please paste some code');
+                return;
+            }
+
+            fetch('/api/code/learn', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({code: code, language: language})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`Learned ${data.patterns_found} code patterns!`);
+                    document.getElementById('codeInput').value = '';
+                } else {
+                    alert('Error: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => alert('Error: ' + error));
+        }
+
+        connectToNotifications();
+        updateStats();
+        setInterval(updateStats, 5000);
+    </script>
+</body>
+</html>
