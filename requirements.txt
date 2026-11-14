@@ -287,7 +287,7 @@ tk
 tokenizers
 tomli 
 torch==2.8.0
-tornado==6.5.2
+tornado==6.6.1
 tqdm 
 transformers==4.56.0
 trl==0.22.1
